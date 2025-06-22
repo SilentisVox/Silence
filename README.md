@@ -33,10 +33,10 @@ python3 Silence.py
 ### Usage
 
 ```
-python3 Silence.py -c [callback_address] -l [handler_port] -p [stager_port]
+python3 Silence.py [-h] -c [callback_address] -l [handler_port] -p [stager_port]
 ```
 
 <div align="center" markdown="1">
-  <img width="736" src="https://github.com/SilentisVox/Silence/blob/master/assets/Silence.jpg">
+  <img width="500" src="https://github.com/SilentisVox/Silence/blob/master/assets/Silence.jpg">
   <br>
 </div>
