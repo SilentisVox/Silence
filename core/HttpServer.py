@@ -103,7 +103,7 @@ class HTTPServer:
         def wait_client(self) -> bool:
                 data                    = b""
 
-                for wait_iteration in range(20):
+                for wait_iteration in range(50):
                         try:
                                 data    = self.client.recv(1024)
                         except BlockingIOError:
