@@ -106,7 +106,7 @@ class HTTPServer:
                 for wait_iteration in range(50):
                         try:
                                 data    = self.client.recv(1024)
-                                break
+                                return data
                         except BlockingIOError:
                                 time.sleep(0.1)
 
