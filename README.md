@@ -1,8 +1,8 @@
 # Silence
 
-Silence is an open-source, cross-platform adversary emulation and red team framework designed to help organizations of all sizes conduct comprehensive security testing. Its primary purpose is to stage and manage reverse shells, making it an essential tool for penetration testers and security professionals.
+Silence is an open source, cross platform framework designed to help organizations of all sizes practice security testing. Its primary purpose is to stage and manage reverse shells. This makes it a very important tool for pentesters and offsec practicers.
 
-The server is supported on Windows and Linux.
+The service as a whole, is fully operational on both Windows and Linux. 
 
 [![Python](https://img.shields.io/badge/Python-%E2%89%A5%203.6-yellow.svg)](https://www.python.org/)
 <img src="https://img.shields.io/badge/Developed%20on-Windows%2011-1677CF">
