@@ -66,5 +66,7 @@ def main() -> None:
         if http_server.listener:
                 http_server.shutdown()
 
+        print()
+
 if __name__ == "__main__":
         main()
