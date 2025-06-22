@@ -46,13 +46,11 @@ python3 Silence.py [-h] -c [callback_address] -l [handler_port] -p [stager_port]
   </a>
 </p>
 
+
+### Example
+
 ```
  → python Silence.py -h
-
-    ┌─┐┬ ┬  ┌─┐┌┐┌┌─┐┌─┐
-    └─┐│ │  ├- ││││  ├-
-    └─┘┴ ┴─┘└─┘┘└┘└─┘└─┘
-                Descends
 
 usage: Silence.py [-h] [-c C] [-p P] [-l L]
 
@@ -61,4 +59,24 @@ options:
   -c C        Callback address
   -p P        TCP Handler port (Default 4443)
   -l L        HTTP Stager port (Default 8080)
+```
+
+```
+Silence> help
+
+ Command       Description
+ ------------  ---------------------------------------------
+
+ shell    [+]  Begins communication with a specified client.
+ sessions      Displays current sessions avaialable.
+ generate      Generates a 1-stop-shop payload that creates
+               a reverse shell with the current settings.
+ jobs          Displays current services running.
+ start    [+]  Starts a given service [handler|listener],
+               with given args [callback_ip|callback_port]
+ stop     [+]  Stops a given service [handler|listener].
+ kill     [+]  Kills a connection with a specified client.
+ help          Displays this menu.
+ clear         Clears the terminal window.
+ exit          Exits Silence.
 ```
