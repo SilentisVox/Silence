@@ -38,4 +38,10 @@ python3 Silence.py [-h] -c [callback_address] -l [handler_port] -p [stager_port]
 
 ### Demo
 
-[![Watch the demo](https://img.youtube.com/vi/JKp0YGE0NFw/0.jpg)](https://youtu.be/JKp0YGE0NFw)
+###### click for video demo
+
+<p align="center">
+  <a href="https://youtu.be/JKp0YGE0NFw">
+    <img src="assets/Silence.jpg" alt="Demo" />
+  </a>
+</p>
