@@ -207,7 +207,11 @@ class CommandHandler:
                 core.TextAssets.get_help()
 
         def clear(self) -> None:
-                os.system("cls")
+                if os.name == "nt":
+                        os.system("cls")
+                        return
+
+                os.system("clear")
 
         def done(self) -> None:
                 raise Exception("Exitting ...")
