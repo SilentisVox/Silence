@@ -45,3 +45,20 @@ python3 Silence.py [-h] -c [callback_address] -l [handler_port] -p [stager_port]
     <img src="assets/Silence.jpg" alt="Demo" />
   </a>
 </p>
+
+```
+ → python Silence.py -h
+
+    ┌─┐┬ ┬  ┌─┐┌┐┌┌─┐┌─┐
+    └─┐│ │  ├- ││││  ├-
+    └─┘┴ ┴─┘└─┘┘└┘└─┘└─┘
+                Descends
+
+usage: Silence.py [-h] [-c C] [-p P] [-l L]
+
+options:
+  -h, --help  show this help message and exit
+  -c C        Callback address
+  -p P        TCP Handler port (Default 4443)
+  -l L        HTTP Stager port (Default 8080)
+```
