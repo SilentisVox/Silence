@@ -38,9 +38,9 @@ python3 Silence.py [-h] -c [callback_address] -l [handler_port] -p [stager_port]
 
 ### Demo
 
-###### click for video demo
-
 <p align="center">
+  <sup>Video Demo on YouTube</sup>
+  <br>
   <a href="https://youtu.be/JKp0YGE0NFw">
     <img src="assets/Silence.jpg" alt="Demo" />
   </a>
