@@ -36,7 +36,9 @@ python3 Silence.py
 python3 Silence.py [-h] -c [callback_address] -l [handler_port] -p [stager_port]
 ```
 
+### Demo
+
 <div align="center" markdown="1">
-  <img width="500" src="https://github.com/SilentisVox/Silence/blob/master/assets/Silence.jpg">
+  <video width="500" src="https://github.com/SilentisVox/Silence/blob/master/assets/Demo.mp4">
   <br>
 </div>
