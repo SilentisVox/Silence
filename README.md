@@ -38,7 +38,4 @@ python3 Silence.py [-h] -c [callback_address] -l [handler_port] -p [stager_port]
 
 ### Demo
 
-<div align="center" markdown="1">
-  <video width="500" src="https://github.com/SilentisVox/Silence/blob/master/assets/Demo.mp4">
-  <br>
-</div>
+[![Watch demo](assets/Silence.jpg)](assets/Demo.mp4)
