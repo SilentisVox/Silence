@@ -238,15 +238,32 @@ class SilentServer:
 
         def wait_client(self) -> bool:
                 data                    = b""
+                previous_data_length    = len(data)
 
                 for wait_iteration in range(50):
                         try:
-                                data    = self.client.recv(1024)
-                                return data
+                                data   += self.client.recv(1024)
+                                
+                                if len(data) == previous_data_length:
+                                        time.sleep(1)
+                                        data += self.should_quit()
+
+                                        if len(data) == previous_data_length:
+                                                return data
+                                        else:
+                                                previous_data_length = len(data)
+
                         except BlockingIOError:
                                 time.sleep(0.1)
 
                 return data
+
+        def should_quit(self) -> bytes:
+            try:
+                    data                = self.client.recv(1024)
+                    return data
+            except BlockingIOError:
+                    return b""
 
         def get_client_id(self) -> str:
                 client_id               = []
