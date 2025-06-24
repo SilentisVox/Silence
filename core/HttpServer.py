@@ -33,7 +33,7 @@ class HTTPServer:
         def serve(self) -> None:
                 while True:
                         try:
-                                self.client, address = self.accept_client()
+                                self.client, address = self.listener.accept()
                         except:
                                 return None
                         
@@ -53,12 +53,6 @@ class HTTPServer:
                 self.server_thread      = None
 
                 return True
-
-        def accept_client(self) -> tuple[socket.socket, tuple[str, int]]:
-                try:
-                        return self.listener.accept()
-                except:
-                        return False
 
         def verify_request(self) -> bool:
                 data                    = self.wait_client().decode()
