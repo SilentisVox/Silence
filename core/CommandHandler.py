@@ -10,45 +10,93 @@ class CommandHandler:
                 self.silent_server      = silent_server
                 self.http_server        = http_server
                 self.commands           = {
-                        "shell"         : {
-                            "args"      : 1,
-                            "function"  : self.shell,
+                        "shell" : {
+                                "min_args" : 1,
+                                "max_args" : 1,
+                                "function" : self.shell,
+                                "descript" : """
+                                \r shell [client_id]   : Enter into a shell with a given client ID.
+                                \r                       Find all current client IDs using 'sessions'.
+                                """
                         },
-                        "sessions"      : {
-                            "args"      : 0,
-                            "function"  : self.sessions
+                        "sessions" : {
+                                "min_args" : 0,
+                                "max_args" : 0,
+                                "function" : self.sessions,
+                                "descript" : """
+                                \r sessions            : Lists all currently connected clients with
+                                \r                       their respective IDs, IPs, OS, Username, and
+                                \r                       current connectivity status.
+                                """
                         },
-                        "generate"      : {
-                            "args"      : 0,
-                            "function"  : self.generate
+                        "generate" : {
+                                "min_args" : 0,
+                                "max_args" : 1,
+                                "function" : self.generate,
+                                "descript" : """
+                                \r generate [+]        : Generates a powershell reverse shell stager
+                                \r                       payload by default. Can generate: [encode],
+                                \r                       [raw], [http]
+                                """
                         },
-                        "jobs"          : {
-                            "args"      : 0,
-                            "function"  : self.jobs
+                        "jobs" : {
+                                "min_args" : 0,
+                                "max_args" : 0,
+                                "function" : self.jobs,
+                                "descript" : """
+                                \r jobs                : Lists current services running.
+                                """
                         },
-                        "start"         : {
-                            "args"      : 3,
-                            "function"  : self.start
+                        "start" : {
+                                "min_args" : 3,
+                                "max_args" : 4,
+                                "function" : self.start,
+                                "descript" : """
+                                \r start [service] [+] : Starts a service with given optional parameters.
+                                \r                       Ex:
+                                \r                       start [handler|stager] [callback_address] [listen_port] [dwell_time]
+                                """
                         },
-                        "stop"          : {
-                            "args"      : 1,
-                            "function"  : self.stop
+                        "stop" : {
+                                "min_args" : 1,
+                                "max_args" : 1,
+                                "function" : self.stop,
+                                "descript" : """
+                                \r stop [service]      : Stops a given service [handler|stager].
+                                """
                         },
-                        "kill"          : {
-                            "args"      : 1,
-                            "function"  : self.kill
+                        "kill" : {
+                                "min_args" : 1,
+                                "max_args" : 1,
+                                "function" : self.kill,
+                                "descript" : """
+                                \r kill [client_id]   : Terminates client connection with given client ID.
+                                """
                         },
-                        "help"          : {
-                            "args"      : 0,
-                            "function"  : self.get_help
+                        "help" : {
+                                "min_args" : 0,
+                                "max_args" : 1,
+                                "function" : self.get_help,
+                                "descript" : """
+                                \r help [+]           : Displays unique help menu to a specific command.
+                                """
                         },
-                        "clear"         : {
-                            "args"      : 0,
-                            "function"  : self.clear
+                        "clear" : {
+                                "min_args" : 0,
+                                "max_args" : 0,
+                                "function" : self.clear,
+                                "descript" : """
+                                \r clear              : Clears the terminal.
+                                """
                         },
-                        "exit"          : {
-                            "args"      : 0,
-                            "function"  : self.done
+                        "exit" : {
+                                "min_args" : 0,
+                                "max_args" : 0,
+                                "function" : self.done,
+                                "descript" : """
+                                \r exit               : Gracefully shuts down services and closes any
+                                \r                      client connections.
+                                """
                         }
                 }
 
@@ -57,7 +105,11 @@ class CommandHandler:
                         self.not_found()
                         return False
 
-                if self.commands[command]["args"] != num_args:
+                if self.commands[command]["min_args"] > num_args:
+                        self.wrong_args()
+                        return False
+
+                if self.commands[command]["max_args"] < num_args:
                         self.wrong_args()
                         return False
 
@@ -67,24 +119,25 @@ class CommandHandler:
                 if not user_input:
                         return
 
-                user_input              = user_input.split()
-                command                 = user_input[0].lower()
+                user_input              = user_input.lower().split()
+                command                 = user_input[0]
                 num_args                = len(user_input) - 1
 
                 if not self.validate(command, num_args):
                         return
 
-                if not self.commands[command]["args"]:
+                max_args                = self.commands[command]["max_args"]
+
+                if not max_args:
                         self.commands[command]["function"]()
                         return
 
-                if self.commands[command]["args"]:
-                        args            = user_input[1:]
-                        self.commands[command]["function"](args)
-                        return
+                args                    = user_input[1:]
 
-        def shell(self, client_id: list) -> None:
-                client_id               = client_id[0]
+                self.commands[command]["function"](*args)
+
+        def shell(self, client_id: str) -> None:
+                client_id               = client_id.upper()
 
                 if not self.silent_server.clients:
                         print("No sessions established.")
@@ -125,12 +178,17 @@ class CommandHandler:
                 else:
                         print("No sessions established.")
 
-        def generate(self) -> None:
-                if self.silent_server.listener:
-                        core.TextAssets.print_info("Generating payload ...")
-                        payload         = self.silent_server.get_payload()
-                        payload         = core.TextAssets.make_gray(payload)
-                        print(payload)
+        # TODO:
+        # Add options for encoded, raw, http
+
+        def generate(self, payload: str = "encoded") -> None:
+                if not self.silent_server.listener:
+                        return
+
+                core.TextAssets.print_info("Generating payload ...")
+                payload         = self.silent_server.get_payload()
+                payload         = core.TextAssets.make_gray(payload)
+                print(payload)
 
         def jobs(self) -> None:
                 if not self.silent_server.listener and not self.http_server.listener:
@@ -142,40 +200,47 @@ class CommandHandler:
                 jobs.append(("HTTP Stager", str(self.http_server.listen_port),     bool(self.http_server.server_thread)))
                 core.TextAssets.print_jobs(jobs)
 
-        def start(self, args: list) -> None:
-                job                     = args[0].lower()
-                callback_address        = args[1]
-                port                    = args[2]
+        def start(self, job: str, callback_address: str, port: str, dwell_time: str = 2) -> None:
+                if not (job or callback_address or port):
+                        return
+
+                port                    = int(port)
 
                 if job == "handler":
-                        self.silent_server = SilentServer(callback_address, port)
+                        if self.silent_server.listener:
+                                print("Server already active.")
+                                return
+
+                        self.silent_server = SilentServer(callback_address, port, dwell_time)
                         
                         if self.silent_server.initialize_server():
                                 core.TextAssets.print_success()
 
                 if job == "stager":
+                        if self.http_server.listener:
+                                print("Server already active.")
+                                return
+
                         callback_port    = self.silent_server.callback_port
                         self.http_server = HTTPServer(callback_address, port, callback_port)
                         
                         if self.http_server.initialize_server():
                                 core.TextAssets.print_success()
 
-                        
-
         def stop(self, job: str) -> None:
-                job                     = job[0].lower()
-
                 if job == "handler":
                         if self.silent_server.shutdown():
                                 core.TextAssets.print_success()
+                                return
 
                 if job == "stager":
                         if self.http_server.shutdown():
                                 core.TextAssets.print_success()
+                                return
 
 
-        def kill(self, client_id) -> None:
-                client_id               = client_id[0]
+        def kill(self, client_id: str) -> None:
+                client_id               = client_id.upper()
 
                 if not self.silent_server.clients:
                         print("No sessions established.")
@@ -205,8 +270,17 @@ class CommandHandler:
                 client.client.close()
                 core.TextAssets.print_success()
 
-        def get_help(self) -> None:
-                core.TextAssets.get_help()
+        def get_help(self, command: str = None) -> None:
+                if not command:
+                        core.TextAssets.get_help()
+                        return
+
+                if command not in self.commands.keys():
+                        self.not_found()
+                        return
+
+                description             = self.commands[command]["descript"]
+                core.TextAssets.get_command_help(description)
 
         def clear(self) -> None:
                 if os.name == "nt":
@@ -222,4 +296,4 @@ class CommandHandler:
                 print("Command not recognized.")
 
         def wrong_args(self) -> None:
-                print("Command needs correct args.")
+                print("Command needs correct arguments.")
