@@ -23,9 +23,10 @@ class ClientStructure:
         client_usage  : str
 
 class SilentServer:
-        def __init__(self, callback_address: str, callback_port: int) -> None:
+        def __init__(self, callback_address: str, callback_port: int, dwell_time: int = 2) -> None:
                 self.callback_address   = callback_address
                 self.callback_port      = callback_port
+                self.dwell_time         = dwell_time
                 self.listener           = None
                 self.server_thread      = None
                 self.manager            = None
@@ -50,7 +51,7 @@ class SilentServer:
                         return False
 
                 self.listener           = socket.socket()
-                self.listener.bind(("0.0.0.0", int(self.callback_port)))
+                self.listener.bind(("0.0.0.0", self.callback_port))
                 self.listener.listen(socket.SOMAXCONN)
 
                 self.server_thread      = threading.Thread(
@@ -84,7 +85,7 @@ class SilentServer:
         # present. If we get any other error, a disconnect.
 
         def client_manager(self) -> None:
-                while True:
+                while self.listener:
                         time.sleep(1)
                         self.track_clients()
 
@@ -131,13 +132,13 @@ class SilentServer:
                                 client, address = self.listener.accept()
                         except:
                                 print("Listener Error! Aborting Listen!")
-                                return None
+                                return
 
                         client.setblocking(False)
 
                         client_check    = threading.Thread(
                                 target  = self.begin_accept,
-                                args    = (client,address),
+                                args    = (client, address),
                                 daemon  = True
                         )
                         client_check.start()
@@ -336,7 +337,7 @@ class SilentServer:
         def data_poller(self, data_poll: DataPoll) -> None:
                 times_data_checked      = 0
 
-                while times_data_checked != 20:
+                while times_data_checked != (self.dwell_time * 10):
                         if data_poll.new_data:
                                 times_data_checked = 0
                                 data_poll.new_data = False
