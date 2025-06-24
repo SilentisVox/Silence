@@ -1,8 +1,9 @@
+import socket
 import threading
 import core.TextAssets
 
 class ClientHandler:
-        def __init__(self, client: object) -> None:
+        def __init__(self, client: socket.socket) -> None:
                 self.client             = client
                 self.connected          = True
                 self.recv_thread        = None
