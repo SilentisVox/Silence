@@ -3,7 +3,7 @@ import time
 import threading
 
 class HTTPServer:
-        def __init__(self, callback_address: str, listen_port: str, callback_port: str) -> None:
+        def __init__(self, callback_address: str, listen_port: int, callback_port: int) -> None:
                 self.callback_address   = callback_address
                 self.listen_port        = listen_port
                 self.callback_port      = callback_port
@@ -19,7 +19,7 @@ class HTTPServer:
                         return False
 
                 self.listener           = socket.socket()
-                self.listener.bind(("0.0.0.0", int(self.listen_port)))
+                self.listener.bind(("0.0.0.0", self.listen_port))
                 self.listener.listen(socket.SOMAXCONN)
 
                 self.server_thread      = threading.Thread(
