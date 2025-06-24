@@ -178,3 +178,9 @@ def get_help():
         \r
         \r exit          Exits Silence.
         """)
+
+def get_command_help(description):
+        print(f"""
+        \r Command Description
+        \r ----------------------------------------------------------------------
+           {description}""")
