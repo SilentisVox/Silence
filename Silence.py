@@ -18,7 +18,6 @@ def main() -> None:
 
         if not args.c:
                 core.TextAssets.print_debug()
-                core.TextAssets.cursor_on()
                 return
 
         if not args.l:
@@ -32,7 +31,6 @@ def main() -> None:
         core.TextAssets.print_info("Please type 'help' for more options")
 
         silent_server                   = SilentServer(args.c, args.l)
-        payload                         = silent_server.get_payload()
         silent_server.initialize_server()
         
         http_server                     = HTTPServer(args.c, args.p, args.l)
@@ -59,9 +57,8 @@ def main() -> None:
         if silent_server.listener:
                 silent_server.shutdown()
 
-        if silent_server.clients:
-                for client in silent_server.clients:
-                        client.client.close()
+        for client in silent_server.clients:
+                client.client.close()
 
         if http_server.listener:
                 http_server.shutdown()
