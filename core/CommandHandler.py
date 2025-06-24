@@ -111,9 +111,11 @@ class CommandHandler:
                         print("Client doesn't exist.")
                         return
 
+                self.silent_server.in_comm = True
                 client.client_usage     = "Yes"
                 client_handler          = ClientHandler(client)
                 client_handler.begin_comm()
+                self.silent_server.in_comm = False
                 client.client_usage     = "No"
                 
         def sessions(self) -> None:
