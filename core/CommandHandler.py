@@ -133,7 +133,6 @@ class CommandHandler:
                         return
 
                 args                    = user_input[1:]
-
                 self.commands[command]["function"](*args)
 
         def shell(self, client_id: str) -> None:
@@ -186,7 +185,22 @@ class CommandHandler:
                         return
 
                 core.TextAssets.print_info("Generating payload ...")
-                payload         = self.silent_server.get_payload()
+                payload_map     = {
+                        "raw"     : self.silent_server.get_raw_payload,
+                        "encoded" : self.silent_server.get_payload,
+                        "http"    : self.silent_server.get_http_payload
+                }
+
+                if payload == "http":
+                        if not self.http_server.listener:
+                                return
+
+                        http    = self.http_server.listen_port
+                        payload = payload_map[payload](http)
+
+                else:
+                        payload         = payload_map[payload]()
+
                 payload         = core.TextAssets.make_gray(payload)
                 print(payload)
 
@@ -205,6 +219,7 @@ class CommandHandler:
                         return
 
                 port                    = int(port)
+                dwell_time              = int(dwell_time)
 
                 if job == "handler":
                         if self.silent_server.listener:
