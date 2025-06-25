@@ -126,6 +126,10 @@ def print_lost_client(client, with_prompt):
         if with_prompt:
                 print(prompt(), flush=True, end="")
 
+def print_killed(client_count):
+        killed                          = make_red("[Killed]")
+        print(f"{killed} {client_count} Clients have been killed and cleared from cache.")
+
 def print_jobs(jobs):
         print()
         print("Job          Port   Status")
