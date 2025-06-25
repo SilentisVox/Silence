@@ -30,6 +30,7 @@ class SilentServer:
                 self.listener           = None
                 self.server_thread      = None
                 self.manager            = None
+                self.drop_clients       = False
                 self.clients            = []
                 self.in_comm            = False
 
@@ -81,6 +82,7 @@ class SilentServer:
                 )
                 self.server_thread.start()
 
+                self.drop_clients       = False
                 self.manager            = threading.Thread(
                         target          = self.client_manager,
                         daemon          = True
@@ -106,16 +108,21 @@ class SilentServer:
         # present. If we get any other error, a disconnect.
 
         def client_manager(self) -> None:
-                while self.listener:
+                while not self.drop_clients:
                         time.sleep(1)
                         self.track_clients()
 
+                self.drop_clients       = False
+
         def track_clients(self) -> None:
                 for index, client in enumerate(self.clients):
+                        if self.drop_clients:
+                                return
+
                         if client.client_status == "Lost" or client.client_usage == "Yes":
                                 continue
 
-                        if  not self.peek_client(client.client):
+                        if not self.peek_client(client.client):
                                 client.client_status = "Lost"
                                 self.clients[index] = client
                                 self.print_lost_client(client)
@@ -139,6 +146,20 @@ class SilentServer:
                 if not self.in_comm:
                         core.TextAssets.print_lost_client(client, True)
 
+        def kill_clients(self) -> None:
+                self.drop_clients       = True
+                active_clients          = 0
+
+                for client in self.clients:
+                        if client.client_status == "Active":
+                                active_clients += 1
+
+                for client in self.clients:
+                        client.client.close()
+
+                self.clients            = []
+                core.TextAssets.print_killed(active_clients)
+
         # Previously, we were able to accept as many clients possible, but we were not able to handle
         # all of them simultaneously. Because we have a strict time format for handling an accepted
         # client, this means we may be very slow to react to many connections (waiting up to the
@@ -151,8 +172,10 @@ class SilentServer:
                 while True:
                         try:
                                 client, address = self.listener.accept()
-                        except:
-                                print("Listener Error! Aborting Listen!")
+                        except OSError:
+                                return
+                        except Exception as exception:
+                                print(exception)
                                 return
 
                         client.setblocking(False)
