@@ -161,25 +161,14 @@ def get_help():
         \r ------------  ---------------------------------------------
         \r
         \r shell    [+]  Begins communication with a specified client.
-        \r
         \r sessions      Displays current sessions avaialable.
-        \r
-        \r generate      Generates a 1-stop-shop payload that creates
-        \r               a reverse shell with the current settings.
-        \r
+        \r generate      Generates a reverse shell payload w/ settings.
         \r jobs          Displays current services running.
-        \r
-        \r start    [+]  Starts a given service [handler|listener],
-        \r               with given args [callback_ip|callback_port]
-        \r
+        \r start    [+]  Starts a given service [handler|listener].
         \r stop     [+]  Stops a given service [handler|listener].
-        \r
         \r kill     [+]  Kills a connection with a specified client.
-        \r
         \r help          Displays this menu.
-        \r
         \r clear         Clears the terminal window.
-        \r
         \r exit          Exits Silence.
         """)
 
