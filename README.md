@@ -41,7 +41,7 @@ python3 Silence.py [-h] -c [callback_address] -l [handler_port] -p [stager_port]
 <p align="center">
   <sup>Video Demo on YouTube</sup>
   <br>
-  <a href="https://youtu.be/JKp0YGE0NFw">
+  <a href="https://youtu.be/iiUF09fTu5w">
     <img src="assets/Silence.jpg" alt="Demo" />
   </a>
 </p>
