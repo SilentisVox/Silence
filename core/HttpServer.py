@@ -103,5 +103,7 @@ class HTTPServer:
                                 return data
                         except BlockingIOError:
                                 time.sleep(0.1)
+                        except ConnectionResetError:
+                                return b""
 
                 return data
