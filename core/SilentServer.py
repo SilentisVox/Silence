@@ -73,6 +73,7 @@ class SilentServer:
                         return False
 
                 self.listener           = socket.socket()
+                self.listener.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
                 self.listener.bind(("0.0.0.0", self.callback_port))
                 self.listener.listen(socket.SOMAXCONN)
 
